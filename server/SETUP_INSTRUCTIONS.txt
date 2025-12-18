@@ -1,0 +1,21 @@
+﻿# MODESTA Backend Setup Instructions
+
+## Step 1: Install Dependencies
+npm install express cors dotenv mongoose bcryptjs jsonwebtoken
+npm install -D nodemon typescript @types/node @types/express @types/cors @types/bcryptjs @types/jsonwebtoken ts-node
+npm install multer cloudinary express-validator helmet morgan compression
+npm install openai @anthropic-ai/sdk
+
+## Step 2: Configure Environment Variables
+Edit the .env file and add your actual API keys and database connection string
+
+## Step 3: Run the Development Server
+npm run dev
+
+## Step 4: Build for Production
+npm run build
+
+## Step 5: Start Production Server
+npm start
+
+Your backend server will be running on http://localhost:5000

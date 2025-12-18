@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Preconnect to critical origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Luxury Serif Font - Playfair Display -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet" />
+    
+    <title>MODESTA - Luxury Modest Fashion</title>
+    <meta name="description" content="Your luxury digital closet. Curate your modest wardrobe with elegance and discover your signature style." />
+    <meta name="author" content="Modesta" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+
+    <meta property="og:title" content="MODESTA - Luxury Modest Fashion" />
+    <meta property="og:description" content="Your luxury digital closet. Curate your modest wardrobe with elegance." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@Modesta" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    
+    <!-- Critical CSS -->
+    <style>
+      :root {
+        --background: 0 0% 100%;
+        --foreground: 0 0% 0%;
+      }
+      .dark {
+        --background: 0 0% 0%;
+        --foreground: 0 0% 100%;
+      }
+      body {
+        margin: 0;
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
+        font-family: 'Playfair Display', Georgia, serif;
+      }
+      #root {
+        min-height: 100vh;
+      }
+      .app-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      .app-loading::after {
+        content: "";
+        width: 32px;
+        height: 32px;
+        border: 1px solid hsl(var(--foreground) / 0.2);
+        border-top-color: hsl(45 80% 50%);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="root" class="app-loading"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
