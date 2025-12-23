@@ -12,8 +12,10 @@ import { AccessibilityPanel } from '@/components/accessibility';
 import { ThemeToggle } from '@/components/theme';
 import { AppLayout } from '@/components/layout';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useAuth } from '@/contexts/useAuth';
 
 const Settings = () => {
+  const { user } = useAuth();
   const {
     profile,
     preferences,
@@ -29,7 +31,7 @@ const Settings = () => {
     updateDetailedMeasurements,
     updateAccount,
     updatePrivacy,
-  } = useSettings();
+  } = useSettings(user);
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },

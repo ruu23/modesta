@@ -130,7 +130,7 @@ export default function Closet() {
         <header className="pt-16 md:pt-24 pb-8 md:pb-12 text-center">
           <div className="w-16 h-px bg-gold mx-auto mb-8" />
           <h1 className="font-serif text-3xl md:text-5xl tracking-[0.2em] uppercase text-foreground">
-            Collection
+            your closet
           </h1>
           <p className="mt-4 text-xs md:text-sm tracking-[0.3em] uppercase text-muted-foreground">
             {stats.totalItems} Pieces

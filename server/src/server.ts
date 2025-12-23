@@ -1,52 +1,115 @@
-﻿import dotenv from 'dotenv';
-dotenv.config();
-import express, { Application } from 'express';
+﻿// server/src/server.ts
+import express from 'express';
+import mongoose from 'mongoose';
 import cors from 'cors';
+import dotenv from 'dotenv';
 import helmet from 'helmet';
-import morgan from 'morgan';
-import compression from 'compression';
-import connectDB from './config/database';
-import { errorHandler } from './middleware/errorHandler';
-
-// Import routes
+import rateLimit from 'express-rate-limit';
+import mongoSanitize from 'express-mongo-sanitize';
+import xss from 'xss-clean';
+import hpp from 'hpp';
+import { rateLimit as rl } from 'express-rate-limit';
 import authRoutes from './routes/authRoutes';
-import productRoutes from './routes/productRoutes';
-import aiRoutes from './routes/aiRoutes';
-import userRoutes from './routes/userRoutes';
+import path from 'path';
 
+// Load environment variables
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-// Connect to database
-connectDB();
+const app = express();
 
-const app: Application = express();
+// Security Middleware
 
-// Middleware
+// 1. Set security HTTP headers
 app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true
+
+// 2. Rate limiting - limit each IP to 100 requests per windowMs (15 minutes)
+const limiter = rl({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+app.use('/api', limiter);
+
+// 3. Enable CORS with specific origin in production
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.CLIENT_URL 
+    : 'http://localhost:8080',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Authorization']
+};
+app.use(cors(corsOptions));
+
+// 4. Body parser, reading data from body into req.body
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+// 5. Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// 6. Data sanitization against XSS
+app.use(xss());
+
+// 7. Prevent parameter pollution
+app.use(hpp({
+  whitelist: [
+    // Add any query parameters you want to allow duplicates for
+  ]
 }));
-app.use(morgan('dev'));
-app.use(compression());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/users', userRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Server is running' });
+  res.json({ status: 'ok', message: 'Server is running' });
 });
 
-// Error handler
-app.use(errorHandler);
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
+  });
+});
 
-const PORT = process.env.PORT || 5000;
+// Email service is imported from emailService.ts
 
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-})
+// Error handling middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Global error handler:', err);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// MongoDB connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/modesta';
+
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📍 API available at http://localhost:${PORT}/api`);
+      console.log(`🌐 CORS: Allowing all origins (development mode)`);
+    });
+  })
+  .catch((error) => {
+    console.error('❌ MongoDB connection error:', error);
+    process.exit(1);
+  });
+
+export default app;

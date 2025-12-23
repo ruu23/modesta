@@ -13,6 +13,15 @@ export interface UserProfile {
   };
   isPublic: boolean;
   createdAt: Date;
+  preferences: {
+      language: string;
+      currency: string;
+      notifications: {
+        email: boolean;
+        push: boolean;
+        sms: boolean;
+      }
+    };
 }
 
 export interface StylePreferences {

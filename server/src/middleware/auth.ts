@@ -1,51 +1,112 @@
-﻿import { Request, Response, NextFunction } from 'express';
+﻿// server/src/middleware/auth.ts
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import User, { IUser } from '../models/User';
+import { User } from '../models/User';
+
+// Export the AuthRequest interface for use in other files
+export interface AuthRequest extends Request {
+  user?: {
+    id: string;
+  };
+}
 
 interface JwtPayload {
   id: string;
+  iat?: number;
+  exp?: number;
 }
 
-export interface AuthRequest extends Request {
-  user?: IUser;
-}
-
+/**
+ * Protect routes - verify JWT token and check if user exists
+ */
 export const protect = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    let token;
+    let token: string | undefined;
 
-    if (req.headers.authorization?.startsWith('Bearer')) {
+    // 1. Get token from header, cookie, or query string
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
+    ) {
+      // Get token from header
       token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies?.jwt) {
+      // Get token from cookie
+      token = req.cookies.jwt;
     }
 
+    // 2. Check if token exists
     if (!token) {
-      res.status(401).json({ message: 'Not authorized, no token' });
+      res.status(401).json({
+        success: false,
+        message: 'You are not logged in! Please log in to get access.'
+      });
       return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
-    const user = await User.findById(decoded.id).select('-password');
+    // 3. Verify token
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET is not defined in environment variables');
+    }
 
-    if (!user) {
-      res.status(401).json({ message: 'User not found' });
+    // 4. Verify token
+    const decoded = jwt.verify(token, secret) as JwtPayload;
+
+    // 5. Check if user still exists
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      res.status(401).json({
+        success: false,
+        message: 'The user belonging to this token no longer exists.'
+      });
       return;
     }
 
-    req.user = user;
+    // 6. Check if user changed password after the token was issued
+    if (currentUser.changedPasswordAfter(decoded.iat as number)) {
+      res.status(401).json({
+        success: false,
+        message: 'User recently changed password! Please log in again.'
+      });
+      return;
+    }
+
+    // GRANT ACCESS TO PROTECTED ROUTE
+    req.user = { id: currentUser._id.toString() };
+    res.locals.user = currentUser;
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Not authorized, token failed' });
+    console.error('Auth middleware error:', error);
+    
+    let message = 'You are not logged in! Please log in to get access.';
+    if (error instanceof jwt.TokenExpiredError) {
+      message = 'Your token has expired! Please log in again.';
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      message = 'Invalid token! Please log in again.';
+    }
+    
+    res.status(401).json({
+      success: false,
+      message
+    });
   }
 };
 
-export const admin = (req: AuthRequest, res: Response, next: NextFunction): void => {
-  if (req.user && req.user.role === 'admin') {
-    next();
-  } else {
-    res.status(403).json({ message: 'Not authorized as admin' });
+/**
+ * Admin middleware - verify user has admin role
+ * Must be used after the protect middleware
+ */
+export const admin = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.user) {
+    const user = await User.findById(req.user.id);
+    if (user && user.role === 'admin') {
+      return next();
+    }
   }
+  res.status(403).json({ message: 'Not authorized as admin' });
 };

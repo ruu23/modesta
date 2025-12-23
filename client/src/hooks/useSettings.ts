@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   UserProfile, 
   Preferences, 
@@ -6,17 +6,6 @@ import {
   AccountSettings, 
   Subscription 
 } from '@/types/settings';
-
-const DEFAULT_PROFILE: UserProfile = {
-  id: '1',
-  avatar: null,
-  name: 'Fatima Ahmed',
-  bio: 'Modest fashion enthusiast. Sharing my style journey.',
-  location: { city: 'Dubai', country: 'UAE' },
-  socialLinks: { instagram: '@fatima.styles', tiktok: '@fatima.styles' },
-  isPublic: true,
-  createdAt: new Date('2024-01-15'),
-};
 
 const DEFAULT_PREFERENCES: Preferences = {
   style: {
@@ -86,8 +75,32 @@ const DEFAULT_SUBSCRIPTION: Subscription = {
   ],
 };
 
-export const useSettings = () => {
-  const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
+export const useSettings = (initialUserData?: any) => {
+  const [profile, setProfile] = useState<UserProfile>({
+    id: initialUserData?.id || 'temp-id',
+    name: initialUserData?.fullName || '',
+    avatar: null,
+    bio: initialUserData?.bio || '',
+    location: {
+      city: initialUserData?.city || '',
+      country: initialUserData?.country || ''
+    },
+    socialLinks: {
+      instagram: '',
+      tiktok: ''
+    },
+    isPublic: initialUserData?.isPublic || false,
+    createdAt: initialUserData?.createdAt ? new Date(initialUserData.createdAt) : new Date(),
+    preferences: {
+      language: 'en',
+      currency: 'USD',
+      notifications: {
+        email: true,
+        push: true,
+        sms: false
+      }
+    }
+  });
   const [preferences, setPreferences] = useState<Preferences>(DEFAULT_PREFERENCES);
   const [measurements, setMeasurements] = useState<Measurements>(DEFAULT_MEASUREMENTS);
   const [account, setAccount] = useState<AccountSettings>(DEFAULT_ACCOUNT);
@@ -119,9 +132,28 @@ export const useSettings = () => {
     }
   }, [profile, preferences, measurements, account, subscription, isLoading]);
 
-  const updateProfile = (updates: Partial<UserProfile>) => {
-    setProfile(prev => ({ ...prev, ...updates }));
-  };
+  const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {
+    try {
+      // Make API call to update profile
+      const response = await fetch('/api/settings/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(updates)
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
+      }
+      // Update local state
+      setProfile(prev => ({ ...prev, ...updates }));
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      return { success: false, error: error.message };
+    }
+  }, []);
 
   const updatePreferences = (updates: Partial<Preferences>) => {
     setPreferences(prev => ({ ...prev, ...updates }));
