@@ -8,7 +8,12 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint src/**/*.ts",
-    "seed": "ts-node src/scripts/seedData.ts"
+    "seed": "ts-node src/scripts/seedData.ts",
+    "render-build": "npm install && npm run build"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
   },
   "keywords": [
     "fashion",
