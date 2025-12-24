@@ -1,7 +1,7 @@
 import { config } from 'dotenv';
 import path from 'path';
 // Debug the .env file path
-const envPath = path.resolve(__dirname, '../../../.env');
+const envPath = path.resolve(__dirname, '../../.env');
 console.log('Loading .env from:', envPath);
 // Load the environment variables
 const envResult = config({ path: envPath });

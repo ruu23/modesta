@@ -49,7 +49,7 @@ const Settings = () => {
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
           <div className="container mx-auto px-3 md:px-4 h-14 md:h-16 flex items-center justify-between">
             <div className="flex items-center gap-3 md:gap-4">
-              <Link to="/">
+              <Link to="/home">
                 <Button 
                   variant="ghost" 
                   size="icon" 
